@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Todo Calendar</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --bg: #f5f6fa;
+      --surface: #fff;
+      --surface2: #f8f9fc;
+      --text: #202334;
+      --muted: #85899b;
+      --line: #e9ebf2;
+      --primary: #6c63ff;
+      --primary-soft: #efeeff;
+      --shadow: 0 12px 36px rgba(32, 35, 52, .07);
+      --red: #f06b73;
+      --orange: #f4a340;
+      --green: #35b88a;
+      --blue: #5798ed
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      transition: .2s
+    }
+
+    body.dark {
+      --bg: #171923;
+      --surface: #222533;
+      --surface2: #292d3d;
+      --text: #f2f3fa;
+      --muted: #a0a4b6;
+      --line: #383d50;
+      --primary: #9992ff;
+      --primary-soft: #373451;
+      --shadow: 0 12px 36px rgba(0, 0, 0, .22)
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit
+    }
+
+    button {
+      cursor: pointer;
+      border: 0
+    }
+
+    .app {
+      max-width: 1440px;
+      margin: auto;
+      padding: 30px 34px 42px
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 26px
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px
+    }
+
+    .logo {
+      width: 45px;
+      height: 45px;
+      border-radius: 14px;
+      background: var(--primary);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 22px;
+      box-shadow: 0 7px 16px #6c63ff44
+    }
+
+    .brand h1 {
+      font-size: 22px;
+      margin: 0;
+      font-weight: 800;
+      letter-spacing: -.7px
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .icon-btn,
+    .today-btn {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 600
+    }
+
+    .icon-btn {
+      font-size: 18px;
+      width: 42px;
+      height: 42px;
+      padding: 0
+    }
+
+    .today-btn {
+      font-size: 13px
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(480px, 1.08fr) minmax(390px, .92fr);
+      gap: 22px;
+      align-items: start
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow)
+    }
+
+    .calendar-panel {
+      padding: 25px
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 23px
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -.5px
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .month-nav strong {
+      min-width: 115px;
+      text-align: center;
+      font-size: 15px
+    }
+
+    .month-nav button {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 17px
+    }
+
+    .weekdays,
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 7px
+    }
+
+    .weekdays {
+      margin-bottom: 8px
+    }
+
+    .weekdays div {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 8px 0
+    }
+
+    .weekdays div:first-child {
+      color: var(--red)
+    }
+
+    .weekdays div:last-child {
+      color: var(--blue)
+    }
+
+    .day {
+      position: relative;
+      min-height: 105px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      padding: 9px 8px;
+      text-align: left;
+      color: var(--text);
+      transition: .15s;
+      overflow: visible
+    }
+
+    .day:hover {
+      border-color: var(--primary);
+      background: var(--surface2);
+      z-index: 2
+    }
+
+    .day.other {
+      opacity: .35
+    }
+
+    .day.selected {
+      border: 2px solid var(--primary);
+      background: var(--primary-soft);
+      padding: 8px 7px
+    }
+
+    .day.today .day-num {
+      background: var(--primary);
+      color: white
+    }
+
+    .day-num {
+      display: grid;
+      place-items: center;
+      width: 25px;
+      height: 25px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px
+    }
+
+    .day:nth-child(7n+1) .day-num {
+      color: var(--red)
+    }
+
+    .day:nth-child(7n) .day-num {
+      color: var(--blue)
+    }
+
+    .day.today .day-num,
+    .day.selected .day-num {
+      color: white
+    }
+
+    .day-todos {
+      display: flex;
+      flex-direction: column;
+      gap: 3px
+    }
+
+    .mini-todo {
+      font-size: 10px;
+      line-height: 1.4;
+      padding: 3px 5px;
+      border-radius: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      background: var(--primary-soft);
+      color: var(--primary)
+    }
+
+    .mini-todo.done {
+      opacity: .55;
+      text-decoration: line-through
+    }
+
+    .more {
+      font-size: 10px;
+      color: var(--muted);
+      padding-left: 3px
+    }
+
+    .day-tooltip {
+      display: none;
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      width: 225px;
+      background: var(--text);
+      color: var(--surface);
+      border-radius: 10px;
+      padding: 11px;
+      z-index: 10;
+      box-shadow: var(--shadow);
+      pointer-events: none
+    }
+
+    .day:hover .day-tooltip {
+      display: block
+    }
+
+    .tip-title {
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 7px
+    }
+
+    .tip-item {
+      font-size: 10px;
+      line-height: 1.55;
+      margin: 5px 0;
+      color: inherit
+    }
+
+    .tip-meta {
+      opacity: .7
+    }
+
+    .calendar-foot {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-top: 17px;
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    .dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 5px
+    }
+
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 18px
+    }
+
+    .task-panel {
+      padding: 24px
+    }
+
+    .task-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 17px
+    }
+
+    .task-heading h2 {
+      font-size: 19px;
+      margin: 0 0 5px
+    }
+
+    .task-heading p {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0
+    }
+
+    .count-pill {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 20px
+    }
+
+    .add-form {
+      background: var(--surface2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 13px;
+      margin-bottom: 17px
+    }
+
+    .add-form input,
+    .add-form textarea,
+    .modal-form input,
+    .modal-form textarea,
+    .modal-form select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 9px;
+      padding: 10px 11px;
+      outline: none;
+      font-size: 12px
+    }
+
+    .add-form input:focus,
+    .add-form textarea:focus,
+    .modal-form input:focus,
+    .modal-form textarea:focus {
+      border-color: var(--primary)
+    }
+
+    .add-form textarea {
+      resize: vertical;
+      min-height: 54px;
+      margin-top: 8px
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px
+    }
+
+    .form-row select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 9px;
+      padding: 9px;
+      font-size: 11px
+    }
+
+    .add-submit {
+      width: 100%;
+      margin-top: 9px;
+      background: var(--primary);
+      color: white;
+      border-radius: 9px;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px
+    }
+
+    .filter {
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700
+    }
+
+    .filter.active {
+      background: var(--primary-soft);
+      color: var(--primary)
+    }
+
+    .filter-select {
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 10px;
+      margin-left: auto
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 390px;
+      overflow: auto
+    }
+
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      transition: .15s
+    }
+
+    .task:hover {
+      border-color: var(--primary)
+    }
+
+    .priority-line {
+      width: 4px;
+      height: 34px;
+      border-radius: 4px;
+      flex: none
+    }
+
+    .priority-high {
+      background: var(--red)
+    }
+
+    .priority-normal {
+      background: var(--orange)
+    }
+
+    .priority-low {
+      background: var(--green)
+    }
+
+    .check {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--muted);
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      background: transparent;
+      color: white
+    }
+
+    .check.checked {
+      background: var(--green);
+      border-color: var(--green)
+    }
+
+    .task-main {
+      min-width: 0;
+      flex: 1;
+      cursor: pointer
+    }
+
+    .task-title {
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .task-desc {
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 3px
+    }
+
+    .task.done .task-title {
+      text-decoration: line-through;
+      color: var(--muted)
+    }
+
+    .task-tags {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      margin-top: 5px
+    }
+
+    .tag {
+      font-size: 9px;
+      padding: 3px 6px;
+      border-radius: 5px;
+      background: var(--surface2);
+      color: var(--muted)
+    }
+
+    .tag.category {
+      color: var(--primary);
+      background: var(--primary-soft)
+    }
+
+    .empty {
+      text-align: center;
+      padding: 30px 10px;
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .empty span {
+      font-size: 25px;
+      display: block;
+      margin-bottom: 7px
+    }
+
+    .progress-panel {
+      padding: 19px 22px
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 11px
+    }
+
+    .progress-top strong {
+      font-size: 13px
+    }
+
+    .progress-top span {
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 800
+    }
+
+    .progress-track {
+      height: 8px;
+      background: var(--surface2);
+      border-radius: 20px;
+      overflow: hidden
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--primary), #9c95ff);
+      border-radius: 20px;
+      transition: width .3s
+    }
+
+    .progress-caption {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 8px
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #10121d88;
+      z-index: 30;
+      align-items: center;
+      justify-content: center;
+      padding: 20px
+    }
+
+    .modal-backdrop.open {
+      display: flex
+    }
+
+    .modal {
+      width: min(440px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 23px;
+      box-shadow: 0 25px 80px #0003
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 17px
+    }
+
+    .modal-head h3 {
+      margin: 0;
+      font-size: 17px
+    }
+
+    .close {
+      background: var(--surface2);
+      color: var(--text);
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      font-size: 17px
+    }
+
+    .modal-form label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 12px 0 6px
+    }
+
+    .modal-form textarea {
+      min-height: 85px;
+      resize: vertical
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px
+    }
+
+    .modal-actions button {
+      padding: 10px 13px;
+      border-radius: 9px;
+      font-size: 11px;
+      font-weight: 700
+    }
+
+    .save-btn {
+      background: var(--primary);
+      color: white;
+      flex: 1
+    }
+
+    .delete-btn {
+      background: #fff0f0;
+      color: #df555e
+    }
+
+    .cancel-btn {
+      background: var(--surface2);
+      color: var(--text)
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 25px;
+      left: 50%;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      background: var(--text);
+      color: var(--surface);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 12px;
+      transition: .25s;
+      z-index: 50;
+      pointer-events: none
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0)
+    }
+
+    @media(max-width:950px) {
+      .app {
+        padding: 22px 18px
+      }
+
+      .layout {
+        grid-template-columns: 1fr
+      }
+
+      .day {
+        min-height: 90px
+      }
+
+      .right-col {
+        display: grid;
+        grid-template-columns: 1fr
+      }
+
+      .task-list {
+        max-height: 330px
+      }
+    }
+
+    @media(max-width:600px) {
+      .app {
+        padding: 16px 10px 28px
+      }
+
+      header {
+        align-items: flex-start;
+        margin-bottom: 17px
+      }
+
+      .brand h1 {
+        font-size: 18px
+      }
+
+      .brand p {
+        font-size: 10px
+      }
+
+      .logo {
+        width: 39px;
+        height: 39px
+      }
+
+      .today-btn {
+        font-size: 10px;
+        padding: 9px
+      }
+
+      .icon-btn {
+        width: 37px;
+        height: 37px
+      }
+
+      .header-actions {
+        gap: 6px
+      }
+
+      .calendar-panel,
+      .task-panel {
+        padding: 15px 11px;
+        border-radius: 16px
+      }
+
+      .panel-head {
+        margin-bottom: 13px
+      }
+
+      .panel-head h2 {
+        font-size: 16px
+      }
+
+      .month-nav strong {
+        min-width: 94px;
+        font-size: 13px
+      }
+
+      .weekdays,
+      .days {
+        gap: 3px
+      }
+
+      .weekdays div {
+        font-size: 10px
+      }
+
+      .day {
+        min-height: 72px;
+        padding: 5px 3px;
+        border-radius: 8px
+      }
+
+      .day.selected {
+        padding: 4px 2px
+      }
+
+      .day-num {
+        width: 21px;
+        height: 21px;
+        font-size: 10px;
+        margin-bottom: 4px
+      }
+
+      .mini-todo {
+        font-size: 8px;
+        padding: 2px 3px
+      }
+
+      .more {
+        font-size: 8px
+      }
+
+      .day-tooltip {
+        width: 190px
+      }
+
+      .calendar-foot {
+        font-size: 9px;
+        gap: 8px
+      }
+
+      .task-heading h2 {
+        font-size: 17px
+      }
+
+      .task-list {
+        max-height: none
+      }
+
+      .filter {
+        font-size: 9px;
+        padding: 7px 8px
+      }
+
+      .filter-select {
+        font-size: 9px
+      }
+
+      .right-col {
+        gap: 12px
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">✓</div>
+        <div>
+          <h1>My Todo Calendar</h1>
+          <p>하루의 계획을 기록하고, 차근차근 완성해요.</p>
+        </div>
+      </div>
+      <div class="header-actions"><button class="today-btn" id="todayBtn">오늘의 할 일 모아보기</button><button class="icon-btn"
+          id="themeBtn" aria-label="테마 전환">☾</button></div>
+    </header>
+    <main class="layout">
+      <section class="panel calendar-panel">
+        <div class="panel-head">
+          <h2>캘린더</h2>
+          <div class="month-nav"><button id="prevMonth" aria-label="이전 달">‹</button><strong
+              id="monthLabel"></strong><button id="nextMonth" aria-label="다음 달">›</button></div>
+        </div>
+        <div class="weekdays">
+          <div>일</div>
+          <div>월</div>
+          <div>화</div>
+          <div>수</div>
+          <div>목</div>
+          <div>금</div>
+          <div>토</div>
+        </div>
+        <div class="days" id="calendarDays"></div>
+        <div class="calendar-foot"><span><i class="dot" style="background:var(--primary)"></i>선택한 날짜</span><span><i
+              class="dot" style="background:var(--green)"></i>완료한 할 일</span><span>날짜에 마우스를 올리면 상세 내용을 볼 수 있어요.</span>
+        </div>
+      </section>
+      <div class="right-col">
+        <section class="panel task-panel">
+          <div class="task-heading">
+            <div>
+              <h2 id="selectedDateLabel">오늘의 할 일</h2>
+              <p>선택한 날짜의 일정을 관리해 보세요.</p>
+            </div><span class="count-pill" id="taskCount">0개</span>
+          </div>
+          <form class="add-form" id="addForm">
+            <input id="newTitle" maxlength="80" placeholder="어떤 일을 해야 하나요? (필수)" required>
+            <textarea id="newDesc" maxlength="300" placeholder="간단한 설명을 입력해 주세요. (선택)"></textarea>
+            <div class="form-row">
+              <select id="newPriority" aria-label="우선순위">
+                <option value="low">우선순위 · 낮음</option>
+                <option value="normal">우선순위 · 보통</option>
+                <option value="high">우선순위 · 높음</option>
+              </select>
+              <select id="newCategory" aria-label="카테고리">
+                <option value="기타">카테고리 · 기타</option>
+                <option value="업무">카테고리 · 업무</option>
+                <option value="공부">카테고리 · 공부</option>
+                <option value="개인">카테고리 · 개인</option>
+              </select>
+            </div>
+            <button class="add-submit" type="submit">＋ 할 일 추가하기</button>
+          </form>
+          <div class="filters" id="categoryFilters">
+            <button class="filter active" data-category="전체">전체</button><button class="filter"
+              data-category="업무">업무</button><button class="filter" data-category="공부">공부</button><button class="filter"
+              data-category="개인">개인</button><button class="filter" data-category="완료">완료</button>
+            <select class="filter-select" id="statusFilter" aria-label="완료 상태">
+              <option value="all">상태 전체</option>
+              <option value="active">미완료</option>
+              <option value="done">완료</option>
+            </select>
+            <select class="filter-select" id="priorityFilter" aria-label="우선순위 필터">
+              <option value="all">우선순위 전체</option>
+              <option value="high">높음</option>
+              <option value="normal">보통</option>
+              <option value="low">낮음</option>
+            </select>
+          </div>
+          <div class="task-list" id="taskList"></div>
+        </section>
+        <section class="panel progress-panel">
+          <div class="progress-top"><strong>전체 할 일 달성률</strong><span id="progressPercent">0%</span></div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-caption" id="progressCaption">아직 등록된 할 일이 없어요.</div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h3 id="modalTitle">할 일 상세 및 수정</h3><button class="close" id="closeModal" aria-label="닫기">×</button>
+      </div>
+      <form class="modal-form" id="editForm">
+        <label for="editTitle">할 일 제목</label><input id="editTitle" maxlength="80" required>
+        <label for="editDesc">설명</label><textarea id="editDesc" maxlength="300"></textarea>
+        <label for="editPriority">우선순위</label><select id="editPriority">
+          <option value="high">높음</option>
+          <option value="normal">보통</option>
+          <option value="low">낮음</option>
+        </select>
+        <label for="editCategory">카테고리</label><select id="editCategory">
+          <option>업무</option>
+          <option>공부</option>
+          <option>개인</option>
+          <option>기타</option>
+          <option>완료</option>
+        </select>
+        <div class="modal-actions"><button class="delete-btn" type="button" id="deleteTask">삭제</button><button
+            class="cancel-btn" type="button" id="cancelModal">취소</button><button class="save-btn" type="submit">변경사항
+            저장</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script>
+    (() => {
+      const STORAGE_KEY = 'todo_calendar_data';
+      const $ = id => document.getElementById(id);
+      const today = new Date();
+      const dateKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const parseDate = key => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
+      let selectedDate = dateKey(today), viewDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      let todos = loadTodos(), activeCategory = '전체', editingId = null;
+      function loadTodos() { try { const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); return Array.isArray(data) ? data : [] } catch { return [] } }
+      function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(todos)) }
+      function escapeHTML(s = '') { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
+      function dateText(key) { return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }).format(parseDate(key)) }
+      function priorityText(p) { return ({ high: '높음', normal: '보통', low: '낮음' })[p] || '낮음' }
+      function isDone(t) { return t.done === true || t.category === '완료' }
+      function toast(message) { $('toast').textContent = message; $('toast').classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => $('toast').classList.remove('show'), 2100) }
+      function renderCalendar() {
+        $('monthLabel').textContent = `${viewDate.getFullYear()}년 ${viewDate.getMonth() + 1}월`;
+        const first = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1), start = new Date(first); start.setDate(1 - first.getDay());
+        let out = '';
+        for (let i = 0; i < 42; i++) {
+          const d = new Date(start); d.setDate(start.getDate() + i); const key = dateKey(d), items = todos.filter(t => t.date === key);
+          const classes = ['day', d.getMonth() !== viewDate.getMonth() ? 'other' : '', key === dateKey(today) ? 'today' : '', key === selectedDate ? 'selected' : ''].filter(Boolean).join(' ');
+          const snippets = items.slice(0, 2).map(t => `<div class="mini-todo ${isDone(t) ? 'done' : ''}">${escapeHTML(t.title)}</div>`).join('');
+          const more = items.length > 2 ? `<div class="more">+${items.length - 2}개 더보기</div>` : '';
+          const tip = items.length ? items.map(t => `<div class="tip-item"><b>${escapeHTML(t.title)}</b><br><span class="tip-meta">${escapeHTML(t.desc || '설명 없음')} · ${escapeHTML(t.category)} · ${priorityText(t.priority)}${isDone(t) ? ' · 완료' : ''}</span></div>`).join('') : '<div class="tip-item">등록된 할 일이 없습니다.</div>';
+          out += `<button class="${classes}" data-date="${key}" aria-label="${dateText(key)} 할 일 ${items.length}개"><span class="day-num">${d.getDate()}</span><div class="day-todos">${snippets}${more}</div><div class="day-tooltip"><div class="tip-title">${dateText(key)} · ${items.length}개</div>${tip}</div></button>`;
+        }
+        $('calendarDays').innerHTML = out;
+        $('calendarDays').querySelectorAll('.day').forEach(el => el.addEventListener('click', () => { selectedDate = el.dataset.date; render() }));
+      }
+      function filteredTodos() {
+        return todos.filter(t => t.date === selectedDate).filter(t => {
+          const done = isDone(t);
+          if (activeCategory === '완료' && !done) return false;
+          if (activeCategory !== '전체' && activeCategory !== '완료' && t.category !== activeCategory) return false;
+          const status = $('statusFilter').value; if (status === 'active' && done) return false; if (status === 'done' && !done) return false;
+          const priority = $('priorityFilter').value; if (priority !== 'all' && t.priority !== priority) return false;
+          return true;
+        }).sort((a, b) => ({ high: 0, normal: 1, low: 2 }[a.priority] ?? 2) - ({ high: 0, normal: 1, low: 2 }[b.priority] ?? 2));
+      }
+      function renderTasks() {
+        $('selectedDateLabel').textContent = dateText(selectedDate);
+        const items = filteredTodos(), all = todos.filter(t => t.date === selectedDate);
+        $('taskCount').textContent = `${all.length}개`;
+        if (!items.length) { $('taskList').innerHTML = `<div class="empty"><span>🗓️</span>${all.length ? '필터 조건에 맞는 할 일이 없어요.' : '아직 등록된 할 일이 없어요.'}<br>위 입력창에서 새로운 할 일을 추가해 보세요.</div>`; return }
+        $('taskList').innerHTML = items.map(t => `<div class="task ${isDone(t) ? 'done' : ''}" data-id="${t.id}">
+      <span class="priority-line priority-${t.priority || 'low'}"></span>
+      <button class="check ${isDone(t) ? 'checked' : ''}" data-check="${t.id}" aria-label="완료 상태 변경">${isDone(t) ? '✓' : ''}</button>
+      <div class="task-main" data-edit="${t.id}"><div class="task-title">${escapeHTML(t.title)}</div>${t.desc ? `<div class="task-desc">${escapeHTML(t.desc)}</div>` : ''}<div class="task-tags"><span class="tag category">${escapeHTML(t.category)}</span><span class="tag">우선순위 ${priorityText(t.priority)}</span></div></div>
+    </div>`).join('');
+        $('taskList').querySelectorAll('[data-check]').forEach(b => b.addEventListener('click', () => toggleDone(b.dataset.check)));
+        $('taskList').querySelectorAll('[data-edit]').forEach(el => el.addEventListener('click', () => openEdit(el.dataset.edit)));
+      }
+      function renderProgress() {
+        const total = todos.length, done = todos.filter(isDone).length, pct = total ? Math.round(done / total * 100) : 0;
+        $('progressPercent').textContent = pct + '%'; $('progressFill').style.width = pct + '%';
+        $('progressCaption').textContent = total ? `${total}개 중 ${done}개 완료 · ${total - done}개 남았어요.` : '아직 등록된 할 일이 없어요.';
+      }
+      function render() { renderCalendar(); renderTasks(); renderProgress(); document.querySelectorAll('.filter').forEach(b => b.classList.toggle('active', b.dataset.category === activeCategory)) }
+      function toggleDone(id) { const t = todos.find(x => x.id === id); if (!t) return; t.done = !isDone(t); if (t.done) t.category = '완료'; else if (t.category === '완료') t.category = '기타'; persist(); render(); toast(t.done ? '할 일을 완료했어요.' : '완료 상태를 해제했어요.') }
+      $('addForm').addEventListener('submit', e => { e.preventDefault(); const title = $('newTitle').value.trim(); if (!title) { $('newTitle').focus(); return } todos.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), date: selectedDate, title, desc: $('newDesc').value.trim(), priority: $('newPriority').value, category: $('newCategory').value, done: false }); persist(); $('addForm').reset(); $('newPriority').value = 'low'; $('newCategory').value = '기타'; render(); toast('새 할 일을 추가했어요.') });
+      function openEdit(id) { const t = todos.find(x => x.id === id); if (!t) return; editingId = id; $('editTitle').value = t.title; $('editDesc').value = t.desc || ''; $('editPriority').value = t.priority || 'low'; $('editCategory').value = t.category || '기타'; $('modalBackdrop').classList.add('open'); $('editTitle').focus() }
+      function closeModal() { $('modalBackdrop').classList.remove('open'); editingId = null }
+      $('editForm').addEventListener('submit', e => { e.preventDefault(); const t = todos.find(x => x.id === editingId); if (!t) return; const category = $('editCategory').value; t.title = $('editTitle').value.trim(); t.desc = $('editDesc').value.trim(); t.priority = $('editPriority').value; t.category = category; t.done = category === '완료'; persist(); closeModal(); render(); toast('할 일 정보를 수정했어요.') });
+      $('deleteTask').addEventListener('click', () => { if (!editingId) return; if (!confirm('이 할 일을 삭제할까요?')) return; todos = todos.filter(t => t.id !== editingId); persist(); closeModal(); render(); toast('할 일을 삭제했어요.') });
+      $('closeModal').addEventListener('click', closeModal); $('cancelModal').addEventListener('click', closeModal);
+      $('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) closeModal() });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal() });
+      $('prevMonth').addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() - 1); renderCalendar() });
+      $('nextMonth').addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() + 1); renderCalendar() });
+      $('todayBtn').addEventListener('click', () => { selectedDate = dateKey(new Date()); viewDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1); activeCategory = '전체'; $('statusFilter').value = 'all'; $('priorityFilter').value = 'all'; render() });
+      $('categoryFilters').addEventListener('click', e => { const b = e.target.closest('[data-category]'); if (!b) return; activeCategory = b.dataset.category; renderTasks(); document.querySelectorAll('.filter').forEach(x => x.classList.toggle('active', x === b)) });
+      $('statusFilter').addEventListener('change', renderTasks); $('priorityFilter').addEventListener('change', renderTasks);
+      $('themeBtn').addEventListener('click', () => { document.body.classList.toggle('dark'); const dark = document.body.classList.contains('dark'); $('themeBtn').textContent = dark ? '☀' : '☾'; localStorage.setItem('todo_calendar_theme', dark ? 'dark' : 'light') });
+      if (localStorage.getItem('todo_calendar_theme') === 'dark') { document.body.classList.add('dark'); $('themeBtn').textContent = '☀' }
+      render();
+    })();
+  </script>
+</body>
+
+</html>

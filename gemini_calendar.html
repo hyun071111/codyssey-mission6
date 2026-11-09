@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Todo Calendar</title>
+    <!-- Google Fonts - Noto Sans KR -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
+        }
+
+        .calendar-cell {
+            min-height: 90px;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-cell {
+                min-height: 65px;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans min-h-full flex flex-col transition-colors duration-200">
+
+    <!-- Header Section -->
+    <header
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <!-- Title & Today Button -->
+                <div class="flex items-center justify-between w-full sm:w-auto gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-blue-600 text-white p-2 rounded-xl shadow-md">
+                            <i class="fa-solid fa-calendar-check text-xl"></i>
+                        </div>
+                        <h1
+                            class="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                            My Todo Calendar
+                        </h1>
+                    </div>
+
+                    <button id="today-btn" type="button"
+                        class="sm:hidden px-3 py-1.5 text-xs font-medium bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-gray-600 rounded-lg transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-clock-rotate-left"></i> 오늘
+                    </button>
+                </div>
+
+                <!-- Progress Bar & Actions -->
+                <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6">
+                    <!-- Progress Bar Component -->
+                    <div
+                        class="flex-1 sm:w-64 bg-gray-100 dark:bg-gray-700/60 p-2.5 rounded-xl border border-gray-200/80 dark:border-gray-700">
+                        <div class="flex justify-between items-center text-xs font-semibold mb-1">
+                            <span class="text-gray-600 dark:text-gray-300">전체 달성률</span>
+                            <span id="progress-percent" class="text-blue-600 dark:text-blue-400 font-bold">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden">
+                            <div id="progress-bar-fill"
+                                class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full w-0 transition-all duration-500 rounded-full">
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                            <span id="progress-text">0 / 0 완료</span>
+                        </div>
+                    </div>
+
+                    <!-- Header Buttons -->
+                    <div class="flex items-center gap-2">
+                        <button id="today-btn-desktop" type="button"
+                            class="hidden sm:flex px-3.5 py-2 text-sm font-medium bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-gray-600 rounded-xl transition-colors items-center gap-2">
+                            <i class="fa-solid fa-calendar-day"></i> 오늘의 할 일
+                        </button>
+
+                        <!-- Theme Toggle Button -->
+                        <button id="theme-toggle-btn" type="button" aria-label="테마 전환"
+                            class="p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors">
+                            <i id="theme-icon-sun" class="fa-solid fa-sun text-amber-500 hidden text-lg"></i>
+                            <i id="theme-icon-moon" class="fa-solid fa-moon text-indigo-500 text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Section: Calendar Component (7 Cols in LG) -->
+        <section
+            class="lg:col-span-7 flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
+            <!-- Calendar Navigation Header -->
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <h2 id="current-month-year"
+                        class="text-xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">
+                        2026년 11월
+                    </h2>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button id="prev-month-btn" type="button" aria-label="이전 달"
+                        class="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fa-solid fa-chevron-left text-sm"></i>
+                    </button>
+                    <button id="next-month-btn" type="button" aria-label="다음 달"
+                        class="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fa-solid fa-chevron-right text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar Days Header -->
+            <div
+                class="grid grid-cols-7 border-b border-gray-100 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800/50 text-center font-semibold text-xs py-2.5">
+                <div class="text-rose-500">일</div>
+                <div class="text-gray-600 dark:text-gray-400">월</div>
+                <div class="text-gray-600 dark:text-gray-400">화</div>
+                <div class="text-gray-600 dark:text-gray-400">수</div>
+                <div class="text-gray-600 dark:text-gray-400">목</div>
+                <div class="text-gray-600 dark:text-gray-400">금</div>
+                <div class="text-blue-500">토</div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div id="calendar-grid" class="grid grid-cols-7 flex-1 bg-gray-200 dark:bg-gray-700 gap-[1px]">
+                <!-- Dynamic Days Rendered via JavaScript -->
+            </div>
+        </section>
+
+        <!-- Right Section: Todo List & Form (5 Cols in LG) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+
+            <!-- Add New Todo Card -->
+            <div
+                class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-blue-600 dark:text-blue-400"></i>
+                        <span>할 일 추가</span>
+                    </h3>
+                    <span id="selected-date-badge"
+                        class="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 text-xs font-semibold rounded-full border border-blue-100 dark:border-blue-800/50">
+                        2026-11-09
+                    </span>
+                </div>
+
+                <form id="add-todo-form" class="space-y-3.5">
+                    <div>
+                        <input type="text" id="todo-title-input" placeholder="할 일 제목을 입력하세요 (필수)" required
+                            class="w-full px-3.5 py-2.5 text-sm bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all">
+                    </div>
+
+                    <div>
+                        <textarea id="todo-desc-input" rows="2" placeholder="상세 설명을 입력하세요 (선택)"
+                            class="w-full px-3.5 py-2 text-sm bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none transition-all"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">우선순위</label>
+                            <select id="todo-priority-input"
+                                class="w-full px-3 py-2 text-xs font-medium bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-800 dark:text-gray-100">
+                                <option value="low">낮음</option>
+                                <option value="medium">보통</option>
+                                <option value="high">높음</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">카테고리</label>
+                            <select id="todo-category-input"
+                                class="w-full px-3 py-2 text-xs font-medium bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-800 dark:text-gray-100">
+                                <option value="etc">기타</option>
+                                <option value="work">업무</option>
+                                <option value="study">공부</option>
+                                <option value="personal">개인</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl shadow-md hover:shadow-blue-500/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus text-xs"></i> 등록하기
+                    </button>
+                </form>
+            </div>
+
+            <!-- Todo List & Filter Toolbar -->
+            <div
+                class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 flex-1 flex flex-col transition-colors duration-200">
+                <!-- Filter Section Header -->
+                <div class="flex flex-col gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-blue-600 dark:text-blue-400"></i>
+                            <span id="todo-list-title">할 일 목록</span>
+                        </h3>
+                        <span id="todo-count-badge"
+                            class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            0개
+                        </span>
+                    </div>
+
+                    <!-- Multi Filters Toolbar -->
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <!-- Category Filter Chips -->
+                        <div id="category-filters" class="flex flex-wrap gap-1">
+                            <button data-cat="all"
+                                class="filter-cat-btn px-2.5 py-1 rounded-lg font-medium bg-blue-600 text-white transition-colors">전체</button>
+                            <button data-cat="work"
+                                class="filter-cat-btn px-2.5 py-1 rounded-lg font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">업무</button>
+                            <button data-cat="study"
+                                class="filter-cat-btn px-2.5 py-1 rounded-lg font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">공부</button>
+                            <button data-cat="personal"
+                                class="filter-cat-btn px-2.5 py-1 rounded-lg font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">개인</button>
+                            <button data-cat="etc"
+                                class="filter-cat-btn px-2.5 py-1 rounded-lg font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">기타</button>
+                            <button data-cat="done"
+                                class="filter-cat-btn px-2.5 py-1 rounded-lg font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">완료</button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <!-- Status Filter Dropdown -->
+                        <select id="filter-status-select"
+                            class="px-2.5 py-1 text-xs bg-gray-50 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none">
+                            <option value="all">상태: 전체</option>
+                            <option value="active">미완료</option>
+                            <option value="completed">완료</option>
+                        </select>
+                        <!-- Priority Filter Dropdown -->
+                        <select id="filter-priority-select"
+                            class="px-2.5 py-1 text-xs bg-gray-50 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none">
+                            <option value="all">우선순위: 전체</option>
+                            <option value="high">높음</option>
+                            <option value="medium">보통</option>
+                            <option value="low">낮음</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Todo List Items Box -->
+                <div id="todo-items-container" class="space-y-2.5 max-h-[360px] overflow-y-auto pr-1 flex-1">
+                    <!-- Dynamic Items Rendered Here -->
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Hover Preview Popover Element -->
+    <div id="hover-popover"
+        class="fixed z-50 hidden bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 p-3.5 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 text-xs max-w-xs pointer-events-none transition-opacity duration-150">
+        <div id="popover-date"
+            class="font-bold border-b border-gray-100 dark:border-gray-700 pb-1.5 mb-2 text-blue-600 dark:text-blue-400">
+            2026-11-09
+        </div>
+        <div id="popover-content" class="space-y-2 max-h-48 overflow-y-auto">
+            <!-- Dynamic popover preview content -->
+        </div>
+    </div>
+
+    <!-- Edit/Detail Modal Container -->
+    <div id="todo-modal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4 transform transition-all scale-100">
+
+            <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-blue-600 dark:text-blue-400"></i>
+                    <span>할 일 상세 및 수정</span>
+                </h3>
+                <button id="modal-close-btn" type="button"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="edit-todo-form" class="space-y-4">
+                <input type="hidden" id="modal-todo-id">
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">날짜</label>
+                    <input type="date" id="modal-todo-date" required
+                        class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">제목</label>
+                    <input type="text" id="modal-todo-title" required
+                        class="w-full px-3.5 py-2.5 text-sm bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">상세 설명</label>
+                    <textarea id="modal-todo-desc" rows="3"
+                        class="w-full px-3.5 py-2 text-sm bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">우선순위</label>
+                        <select id="modal-todo-priority"
+                            class="w-full px-3 py-2 text-xs bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none">
+                            <option value="low">낮음</option>
+                            <option value="medium">보통</option>
+                            <option value="high">높음</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">카테고리</label>
+                        <select id="modal-todo-category"
+                            class="w-full px-3 py-2 text-xs bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none">
+                            <option value="etc">기타</option>
+                            <option value="work">업무</option>
+                            <option value="study">공부</option>
+                            <option value="personal">개인</option>
+                            <option value="done">완료</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 gap-3">
+                    <button type="button" id="modal-delete-btn"
+                        class="px-4 py-2 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i> 삭제
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="modal-cancel-btn"
+                            class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 text-xs font-semibold rounded-xl transition-colors">
+                            취소
+                        </button>
+                        <button type="submit"
+                            class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors shadow-md">
+                            저장하기
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Logic Script -->
+    <script>
+        /**
+         * My Todo Calendar Application
+         * Architecture: State-Driven Pure JavaScript Application
+         */
+
+        // LocalStorage Key
+        const STORAGE_KEY = 'todo_calendar_data';
+
+        // Default Initial Mock State (If no stored data exists)
+        const initialTodos = [
+            {
+                id: 'todo-1',
+                title: '주간 기획 회의 준비',
+                description: '3분기 프로젝트 로드맵 서류 정리 및 발표자료 제작',
+                date: formatDate(new Date()),
+                priority: 'high',
+                category: 'work',
+                completed: false
+            },
+            {
+                id: 'todo-2',
+                title: '자바스크립트 공부',
+                description: 'ES6+ 비동기 처리 및 Web API 챕터 복습',
+                date: formatDate(new Date()),
+                priority: 'medium',
+                category: 'study',
+                completed: true
+            }
+        ];
+
+        // Global State Structure
+        let state = {
+            todos: [],
+            currentYear: new Date().getFullYear(),
+            currentMonth: new Date().getMonth(), // 0-indexed
+            selectedDate: formatDate(new Date()),
+            filterCategory: 'all', // all, work, study, personal, etc, done
+            filterStatus: 'all',   // all, active, completed
+            filterPriority: 'all'  // all, high, medium, low
+        };
+
+        // DOM Elements Map
+        const elements = {
+            calendarGrid: document.getElementById('calendar-grid'),
+            currentMonthYear: document.getElementById('current-month-year'),
+            prevMonthBtn: document.getElementById('prev-month-btn'),
+            nextMonthBtn: document.getElementById('next-month-btn'),
+            todayBtn: document.getElementById('today-btn'),
+            todayBtnDesktop: document.getElementById('today-btn-desktop'),
+            themeToggleBtn: document.getElementById('theme-toggle-btn'),
+            themeIconSun: document.getElementById('theme-icon-sun'),
+            themeIconMoon: document.getElementById('theme-icon-moon'),
+            progressBarFill: document.getElementById('progress-bar-fill'),
+            progressPercent: document.getElementById('progress-percent'),
+            progressText: document.getElementById('progress-text'),
+            selectedDateBadge: document.getElementById('selected-date-badge'),
+            addTodoForm: document.getElementById('add-todo-form'),
+            todoTitleInput: document.getElementById('todo-title-input'),
+            todoDescInput: document.getElementById('todo-desc-input'),
+            todoPriorityInput: document.getElementById('todo-priority-input'),
+            todoCategoryInput: document.getElementById('todo-category-input'),
+            todoItemsContainer: document.getElementById('todo-items-container'),
+            todoListTitle: document.getElementById('todo-list-title'),
+            todoCountBadge: document.getElementById('todo-count-badge'),
+            categoryFilterBtns: document.querySelectorAll('.filter-cat-btn'),
+            filterStatusSelect: document.getElementById('filter-status-select'),
+            filterPrioritySelect: document.getElementById('filter-priority-select'),
+            hoverPopover: document.getElementById('hover-popover'),
+            popoverDate: document.getElementById('popover-date'),
+            popoverContent: document.getElementById('popover-content'),
+            todoModal: document.getElementById('todo-modal'),
+            modalCloseBtn: document.getElementById('modal-close-btn'),
+            modalCancelBtn: document.getElementById('modal-cancel-btn'),
+            editTodoForm: document.getElementById('edit-todo-form'),
+            modalTodoId: document.getElementById('modal-todo-id'),
+            modalTodoDate: document.getElementById('modal-todo-date'),
+            modalTodoTitle: document.getElementById('modal-todo-title'),
+            modalTodoDesc: document.getElementById('modal-todo-desc'),
+            modalTodoPriority: document.getElementById('modal-todo-priority'),
+            modalTodoCategory: document.getElementById('modal-todo-category'),
+            modalDeleteBtn: document.getElementById('modal-delete-btn')
+        };
+
+        // Priority Mappings (Labels & Colors)
+        const PRIORITY_MAP = {
+            high: { label: '높음', color: 'bg-rose-500', textClass: 'text-rose-600 dark:text-rose-400', bgClass: 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900' },
+            medium: { label: '보통', color: 'bg-amber-500', textClass: 'text-amber-600 dark:text-amber-400', bgClass: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900' },
+            low: { label: '낮음', color: 'bg-emerald-500', textClass: 'text-emerald-600 dark:text-emerald-400', bgClass: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900' }
+        };
+
+        // Category Mappings (Labels & Badges)
+        const CATEGORY_MAP = {
+            work: { label: '업무', class: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' },
+            study: { label: '공부', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' },
+            personal: { label: '개인', class: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' },
+            etc: { label: '기타', class: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
+            done: { label: '완료', class: 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400' }
+        };
+
+        /**
+         * Format Date Object to YYYY-MM-DD
+         */
+        function formatDate(date) {
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        /**
+         * Initialize App State & Load LocalStorage
+         */
+        function initApp() {
+            // Theme Initialization
+            const savedTheme = localStorage.getItem('todo_theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                elements.themeIconSun.classList.remove('hidden');
+                elements.themeIconMoon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                elements.themeIconSun.classList.add('hidden');
+                elements.themeIconMoon.classList.remove('hidden');
+            }
+
+            // Load Data from LocalStorage
+            const storedData = localStorage.getItem(STORAGE_KEY);
+            if (storedData) {
+                try {
+                    state.todos = JSON.parse(storedData);
+                } catch (e) {
+                    console.error('Failed to parse local data', e);
+                    state.todos = [...initialTodos];
+                }
+            } else {
+                state.todos = [...initialTodos];
+                saveTodos();
+            }
+
+            // Register Event Listeners
+            bindEvents();
+
+            // Render Application
+            render();
+        }
+
+        /**
+         * Save Todos State to LocalStorage
+         */
+        function saveTodos() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.todos));
+            render();
+        }
+
+        /**
+         * Main Render Dispatcher
+         */
+        function render() {
+            renderCalendar();
+            renderTodoList();
+            renderProgressBar();
+            elements.selectedDateBadge.textContent = state.selectedDate;
+        }
+
+        /**
+         * Render Month Calendar Grid
+         */
+        function renderCalendar() {
+            const year = state.currentYear;
+            const month = state.currentMonth;
+
+            // Update Month/Year Display Text
+            elements.currentMonthYear.textContent = `${year}년 ${month + 1}월`;
+
+            // Clear existing grid
+            elements.calendarGrid.innerHTML = '';
+
+            // Calculate Date Layout
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthLastDate = new Date(year, month, 0).getDate();
+
+            const todayFormatted = formatDate(new Date());
+
+            // 1. Render Previous Month Days (Padding)
+            for (let i = firstDayIndex - 1; i >= 0; i--) {
+                const dayNum = prevMonthLastDate - i;
+                const cell = createCalendarCell(dayNum, true, null);
+                elements.calendarGrid.appendChild(cell);
+            }
+
+            // 2. Render Current Month Days
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateStr === todayFormatted;
+                const isSelected = dateStr === state.selectedDate;
+
+                const cell = createCalendarCell(day, false, dateStr, isToday, isSelected);
+                elements.calendarGrid.appendChild(cell);
+            }
+
+            // 3. Render Next Month Days (Padding to fill grid 35 or 42 cells)
+            const totalRenderedSoFar = firstDayIndex + totalDaysInMonth;
+            const totalGridCells = totalRenderedSoFar > 35 ? 42 : 35;
+            const nextMonthDays = totalGridCells - totalRenderedSoFar;
+
+            for (let day = 1; day <= nextMonthDays; day++) {
+                const cell = createCalendarCell(day, true, null);
+                elements.calendarGrid.appendChild(cell);
+            }
+        }
+
+        /**
+         * Create Single Calendar Cell Element
+         */
+        function createCalendarCell(dayNum, isOtherMonth, dateStr, isToday = false, isSelected = false) {
+            const cell = document.createElement('div');
+            cell.className = `calendar-cell relative bg-white dark:bg-gray-800 p-1.5 flex flex-col justify-between transition-colors select-none ${isOtherMonth ? 'opacity-40 bg-gray-50/60 dark:bg-gray-800/40' : 'cursor-pointer hover:bg-blue-50/40 dark:hover:bg-gray-750'
+                } ${isSelected ? 'ring-2 ring-blue-500 ring-inset z-10' : ''}`;
+
+            // Top Row: Date Number & Badge Indicator
+            const topDiv = document.createElement('div');
+            topDiv.className = 'flex items-center justify-between';
+
+            const numSpan = document.createElement('span');
+            numSpan.className = `text-xs font-semibold inline-flex items-center justify-center w-6 h-6 rounded-full ${isToday
+                ? 'bg-blue-600 text-white font-bold'
+                : isSelected
+                    ? 'text-blue-600 dark:text-blue-400 font-bold'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`;
+            numSpan.textContent = dayNum;
+            topDiv.appendChild(numSpan);
+
+            cell.appendChild(topDiv);
+
+            // Container for Todos inside Day Cell
+            if (!isOtherMonth && dateStr) {
+                cell.dataset.date = dateStr;
+
+                const dateTodos = state.todos.filter(t => t.date === dateStr);
+                const todoContainer = document.createElement('div');
+                todoContainer.className = 'mt-1 space-y-1 overflow-hidden flex-1';
+
+                const maxDisplay = 2; // Show up to 2 items in cell
+                dateTodos.slice(0, maxDisplay).forEach(todo => {
+                    const itemBadge = document.createElement('div');
+                    const isDone = todo.completed || todo.category === 'done';
+                    itemBadge.className = `text-[10px] truncate px-1.5 py-0.5 rounded font-medium border flex items-center gap-1 ${isDone
+                        ? 'line-through opacity-60 bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-700/80 dark:text-gray-200 dark:border-gray-600'
+                        }`;
+
+                    // Priority indicator dot
+                    const dot = document.createElement('span');
+                    dot.className = `w-1.5 h-1.5 rounded-full shrink-0 ${PRIORITY_MAP[todo.priority]?.color || 'bg-gray-400'}`;
+
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'truncate';
+                    textSpan.textContent = todo.title;
+
+                    itemBadge.appendChild(dot);
+                    itemBadge.appendChild(textSpan);
+                    todoContainer.appendChild(itemBadge);
+                });
+
+                // Over-count Indicator (+N)
+                if (dateTodos.length > maxDisplay) {
+                    const moreBadge = document.createElement('div');
+                    moreBadge.className = 'text-[9px] font-bold text-blue-600 dark:text-blue-400 pl-1';
+                    moreBadge.textContent = `+${dateTodos.length - maxDisplay}개 더보기`;
+                    todoContainer.appendChild(moreBadge);
+                }
+
+                cell.appendChild(todoContainer);
+
+                // Date Cell Click Event
+                cell.addEventListener('click', () => {
+                    state.selectedDate = dateStr;
+                    render();
+                });
+
+                // Calendar Hover Popover Events
+                cell.addEventListener('mouseenter', (e) => showPopover(e, dateStr));
+                cell.addEventListener('mouseleave', hidePopover);
+            }
+
+            return cell;
+        }
+
+        /**
+         * Render Hover Preview Popover
+         */
+        function showPopover(event, dateStr) {
+            const dateTodos = state.todos.filter(t => t.date === dateStr);
+            if (dateTodos.length === 0) return;
+
+            elements.popoverDate.textContent = `📅 ${dateStr} (${dateTodos.length}개 할 일)`;
+            elements.popoverContent.innerHTML = '';
+
+            dateTodos.forEach(todo => {
+                const item = document.createElement('div');
+                const isDone = todo.completed || todo.category === 'done';
+                const prio = PRIORITY_MAP[todo.priority] || PRIORITY_MAP.low;
+                const cat = CATEGORY_MAP[todo.category] || CATEGORY_MAP.etc;
+
+                item.className = 'p-2 rounded-lg bg-gray-50 dark:bg-gray-700/60 border border-gray-100 dark:border-gray-600/50';
+                item.innerHTML = `
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="font-semibold text-xs ${isDone ? 'line-through text-gray-400' : 'text-gray-800 dark:text-gray-100'} truncate">
+                            ${escapeHtml(todo.title)}
+                        </span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded ${cat.class}">${cat.label}</span>
+                    </div>
+                    ${todo.description ? `<p class="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2 mb-1">${escapeHtml(todo.description)}</p>` : ''}
+                    <div class="flex items-center gap-1.5 text-[9px]">
+                        <span class="w-2 h-2 rounded-full ${prio.color}"></span>
+                        <span class="${prio.textClass}">${prio.label} 우선순위</span>
+                    </div>
+                `;
+                elements.popoverContent.appendChild(item);
+            });
+
+            // Position calculation
+            const rect = event.currentTarget.getBoundingClientRect();
+            const popoverWidth = 240;
+            let left = rect.left + window.scrollX + (rect.width / 2) - (popoverWidth / 2);
+            let top = rect.bottom + window.scrollY + 8;
+
+            // Edge collision check
+            if (left + popoverWidth > window.innerWidth - 10) {
+                left = window.innerWidth - popoverWidth - 10;
+            }
+            if (left < 10) left = 10;
+
+            elements.hoverPopover.style.left = `${left}px`;
+            elements.hoverPopover.style.top = `${top}px`;
+            elements.hoverPopover.classList.remove('hidden');
+        }
+
+        function hidePopover() {
+            elements.hoverPopover.classList.add('hidden');
+        }
+
+        /**
+         * Render Right Section: Todo List & Applied Filters
+         */
+        function renderTodoList() {
+            // Update Title badge with selected date
+            elements.todoListTitle.textContent = `${state.selectedDate} 할 일`;
+
+            // Filter logic
+            let filtered = state.todos.filter(t => t.date === state.selectedDate);
+
+            // Category Filter
+            if (state.filterCategory !== 'all') {
+                if (state.filterCategory === 'done') {
+                    filtered = filtered.filter(t => t.completed || t.category === 'done');
+                } else {
+                    filtered = filtered.filter(t => t.category === state.filterCategory && !t.completed);
+                }
+            }
+
+            // Status Filter
+            if (state.filterStatus === 'active') {
+                filtered = filtered.filter(t => !t.completed && t.category !== 'done');
+            } else if (state.filterStatus === 'completed') {
+                filtered = filtered.filter(t => t.completed || t.category === 'done');
+            }
+
+            // Priority Filter
+            if (state.filterPriority !== 'all') {
+                filtered = filtered.filter(t => t.priority === state.filterPriority);
+            }
+
+            elements.todoCountBadge.textContent = `${filtered.length}개`;
+            elements.todoItemsContainer.innerHTML = '';
+
+            if (filtered.length === 0) {
+                elements.todoItemsContainer.innerHTML = `
+                    <div class="py-12 text-center text-gray-400 dark:text-gray-500">
+                        <i class="fa-regular fa-clipboard text-3xl mb-2 opacity-60"></i>
+                        <p class="text-xs">등록되거나 필터 조건에 맞는 할 일이 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(todo => {
+                const isCompleted = todo.completed || todo.category === 'done';
+                const prio = PRIORITY_MAP[todo.priority] || PRIORITY_MAP.low;
+                const cat = CATEGORY_MAP[todo.category] || CATEGORY_MAP.etc;
+
+                const card = document.createElement('div');
+                card.className = `p-3.5 rounded-xl border transition-all duration-200 flex items-start justify-between gap-3 ${isCompleted
+                    ? 'bg-gray-50/70 dark:bg-gray-750/50 border-gray-200 dark:border-gray-700 opacity-75'
+                    : 'bg-white dark:bg-gray-800 border-gray-200/90 dark:border-gray-700 hover:shadow-md'
+                    }`;
+
+                card.innerHTML = `
+                    <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <!-- Checkbox for Fast Completion Toggle -->
+                        <button type="button" class="todo-check-btn mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${isCompleted
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'border-gray-300 dark:border-gray-600 text-transparent hover:border-blue-500'
+                    }" data-id="${todo.id}">
+                            <i class="fa-solid fa-check text-xs"></i>
+                        </button>
+
+                        <div class="flex-1 min-w-0 cursor-pointer todo-detail-trigger" data-id="${todo.id}">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <span class="text-sm font-semibold truncate ${isCompleted ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-100'}">
+                                    ${escapeHtml(todo.title)}
+                                </span>
+                            </div>
+
+                            ${todo.description ? `
+                                <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2 ${isCompleted ? 'line-through opacity-70' : ''}">
+                                    ${escapeHtml(todo.description)}
+                                </p>
+                            ` : ''}
+
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <!-- Category Tag -->
+                                <span class="px-2 py-0.5 rounded text-[10px] font-medium ${cat.class}">
+                                    ${cat.label}
+                                </span>
+                                <!-- Priority Tag -->
+                                <span class="px-2 py-0.5 rounded text-[10px] font-medium border flex items-center gap-1 ${prio.bgClass} ${prio.textClass}">
+                                    <span class="w-1.5 h-1.5 rounded-full ${prio.color}"></span>
+                                    ${prio.label}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="todo-delete-quick text-gray-400 hover:text-rose-500 p-1 rounded-lg transition-colors" data-id="${todo.id}">
+                        <i class="fa-regular fa-trash-can text-sm"></i>
+                    </button>
+                `;
+
+                elements.todoItemsContainer.appendChild(card);
+            });
+
+            // Bind item level events
+            elements.todoItemsContainer.querySelectorAll('.todo-check-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleTodoComplete(btn.dataset.id);
+                });
+            });
+
+            elements.todoItemsContainer.querySelectorAll('.todo-detail-trigger').forEach(trigger => {
+                trigger.addEventListener('click', () => {
+                    openModal(trigger.dataset.id);
+                });
+            });
+
+            elements.todoItemsContainer.querySelectorAll('.todo-delete-quick').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteTodo(btn.dataset.id);
+                });
+            });
+        }
+
+        /**
+         * Render Overall Progress Bar
+         */
+        function renderProgressBar() {
+            const total = state.todos.length;
+            if (total === 0) {
+                elements.progressBarFill.style.width = '0%';
+                elements.progressPercent.textContent = '0%';
+                elements.progressText.textContent = '0 / 0 완료';
+                return;
+            }
+
+            const completedCount = state.todos.filter(t => t.completed || t.category === 'done').length;
+            const percentage = Math.round((completedCount / total) * 100);
+
+            elements.progressBarFill.style.width = `${percentage}%`;
+            elements.progressPercent.textContent = `${percentage}%`;
+            elements.progressText.textContent = `${completedCount} / ${total} 완료`;
+        }
+
+        /**
+         * Toggle Todo Completion State
+         */
+        function toggleTodoComplete(id) {
+            state.todos = state.todos.map(t => {
+                if (t.id === id) {
+                    const newStatus = !t.completed;
+                    return {
+                        ...t,
+                        completed: newStatus,
+                        category: newStatus ? 'done' : (t.category === 'done' ? 'etc' : t.category)
+                    };
+                }
+                return t;
+            });
+            saveTodos();
+        }
+
+        /**
+         * Add New Todo
+         */
+        function addTodo(title, description, priority, category) {
+            const newTodo = {
+                id: 'todo-' + Date.now(),
+                title: title.trim(),
+                description: description.trim(),
+                date: state.selectedDate,
+                priority: priority,
+                category: category,
+                completed: category === 'done'
+            };
+
+            state.todos.push(newTodo);
+            saveTodos();
+        }
+
+        /**
+         * Delete Todo
+         */
+        function deleteTodo(id) {
+            state.todos = state.todos.filter(t => t.id !== id);
+            saveTodos();
+        }
+
+        /**
+         * Modal Logic: Open Modal with Selected Todo Data
+         */
+        function openModal(id) {
+            const todo = state.todos.find(t => t.id === id);
+            if (!todo) return;
+
+            elements.modalTodoId.value = todo.id;
+            elements.modalTodoDate.value = todo.date;
+            elements.modalTodoTitle.value = todo.title;
+            elements.modalTodoDesc.value = todo.description || '';
+            elements.modalTodoPriority.value = todo.priority;
+            elements.modalTodoCategory.value = todo.completed ? 'done' : todo.category;
+
+            elements.todoModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            elements.todoModal.classList.add('hidden');
+        }
+
+        /**
+         * Register All Global & Element Event Listeners
+         */
+        function bindEvents() {
+            // Theme Toggle Event
+            elements.themeToggleBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('todo_theme', isDark ? 'dark' : 'light');
+                elements.themeIconSun.classList.toggle('hidden', !isDark);
+                elements.themeIconMoon.classList.toggle('hidden', isDark);
+            });
+
+            // Month Navigation Buttons
+            elements.prevMonthBtn.addEventListener('click', () => {
+                if (state.currentMonth === 0) {
+                    state.currentMonth = 11;
+                    state.currentYear -= 1;
+                } else {
+                    state.currentMonth -= 1;
+                }
+                render();
+            });
+
+            elements.nextMonthBtn.addEventListener('click', () => {
+                if (state.currentMonth === 11) {
+                    state.currentMonth = 0;
+                    state.currentYear += 1;
+                } else {
+                    state.currentMonth += 1;
+                }
+                render();
+            });
+
+            // Today Shortcut Buttons
+            const goToday = () => {
+                const now = new Date();
+                state.currentYear = now.getFullYear();
+                state.currentMonth = now.getMonth();
+                state.selectedDate = formatDate(now);
+                render();
+            };
+            elements.todayBtn.addEventListener('click', goToday);
+            elements.todayBtnDesktop.addEventListener('click', goToday);
+
+            // Add Todo Form Submit
+            elements.addTodoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const title = elements.todoTitleInput.value;
+                const desc = elements.todoDescInput.value;
+                const priority = elements.todoPriorityInput.value;
+                const category = elements.todoCategoryInput.value;
+
+                if (!title.trim()) return;
+
+                addTodo(title, desc, priority, category);
+
+                // Reset Form Inputs
+                elements.todoTitleInput.value = '';
+                elements.todoDescInput.value = '';
+                elements.todoPriorityInput.value = 'low';
+                elements.todoCategoryInput.value = 'etc';
+            });
+
+            // Category Filter Buttons Event Delegation
+            elements.categoryFilterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    elements.categoryFilterBtns.forEach(b => {
+                        b.className = 'filter-cat-btn px-2.5 py-1 rounded-lg font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors';
+                    });
+                    btn.className = 'filter-cat-btn px-2.5 py-1 rounded-lg font-medium bg-blue-600 text-white transition-colors';
+
+                    state.filterCategory = btn.dataset.cat;
+                    renderTodoList();
+                });
+            });
+
+            // Select Dropdown Filters
+            elements.filterStatusSelect.addEventListener('change', (e) => {
+                state.filterStatus = e.target.value;
+                renderTodoList();
+            });
+
+            elements.filterPrioritySelect.addEventListener('change', (e) => {
+                state.filterPriority = e.target.value;
+                renderTodoList();
+            });
+
+            // Modal Controls
+            elements.modalCloseBtn.addEventListener('click', closeModal);
+            elements.modalCancelBtn.addEventListener('click', closeModal);
+            elements.todoModal.addEventListener('click', (e) => {
+                if (e.target === elements.todoModal) closeModal();
+            });
+
+            // Modal Form Edit Save Submit
+            elements.editTodoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = elements.modalTodoId.value;
+                const date = elements.modalTodoDate.value;
+                const title = elements.modalTodoTitle.value;
+                const desc = elements.modalTodoDesc.value;
+                const priority = elements.modalTodoPriority.value;
+                const category = elements.modalTodoCategory.value;
+
+                state.todos = state.todos.map(t => {
+                    if (t.id === id) {
+                        const isDone = category === 'done';
+                        return {
+                            ...t,
+                            date,
+                            title: title.trim(),
+                            description: desc.trim(),
+                            priority,
+                            category,
+                            completed: isDone
+                        };
+                    }
+                    return t;
+                });
+
+                closeModal();
+                saveTodos();
+            });
+
+            // Modal Delete Button
+            elements.modalDeleteBtn.addEventListener('click', () => {
+                const id = elements.modalTodoId.value;
+                deleteTodo(id);
+                closeModal();
+            });
+        }
+
+        /**
+         * Escape HTML Utility
+         */
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Run App On Window Load
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+
+</html>
